@@ -39,8 +39,13 @@
 			case 'file_limit_reached':
 				$.fn.agileUploaderFileLimit(event.file);
 				break;
-			case 'preview':
-				$.fn.agileUploaderPreview(event.file);
+			case 'exif_locaded':
+				//$.fn.agileUploaderPreview(event.file);
+				var exif=event.data;
+				console.log(event)
+				if(opts.exif_callback){
+					opts.exif_callback(exif,event);
+				}
 				break;
 			case 'file_already_attached':
 				$.fn.agileUploaderFileAlreadyAttached(event.file);
@@ -362,11 +367,11 @@
 		flashParams: {allowscriptaccess: 'always'},
 		flashAttributes: {id: "agileUploaderSWF"},
 		flashVars: {
-			max_height: 500,
-			max_width: 500,
+			max_height: 800,
+			max_width: 800,
 			jpg_quality: 85, 
-			preview_max_height: 50,
-			preview_max_width: 50,
+			preview_max_height: 100,
+			preview_max_width: 100,
 			show_encode_progress: true,
 			js_get_form_data: '$.fn.agileUploaderSerializeFormData',
 			js_event_handler: '$.fn.agileUploaderEvent',
@@ -378,7 +383,8 @@
 			file_limit: -1,
 			button_up:'add-file.png',
 			button_over:'add-file.png',
-			button_down:'add-file.png'		
+			button_down:'add-file.png',
+			exif_enable: true,
 		},
 		progressBarColor: '#000000',
 		attachScrollSpeed: 1000,		
@@ -388,7 +394,8 @@
 		maxFileMessage: 'File limit hit, try removing a file first.',
 		duplicateFileMessage: 'This file has already been attached.',
 		notReadyMessage: 'The form can not be submitted yet because there are still files being resized.',
-		removeAllText: 'remove all'
+		removeAllText: 'remove all',
+		exif_callback:function(exif,event){}
 	}	
 	
 })(jQuery);

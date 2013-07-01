@@ -77,6 +77,9 @@ package com.patrickshyu
 			DATASIZES[11] = 4;
 			DATASIZES[12] = 8;
  
+			
+		
+			
 			TAGS[0x010e] = 'ImageDescription';
 			TAGS[0x010f] = 'Make';
 			TAGS[0X0110] = 'Model';
@@ -92,11 +95,14 @@ package com.patrickshyu
 			TAGS[0x0213] = 'YCbCrPositioning';
 			TAGS[0x0214] = 'ReferenceBlackWhite';
 			TAGS[0x8298] = 'Copyright';
- 
+ 			TAGS[0x0100] = "ImageWidth";
+			TAGS[0x0101] = "ImageHeight";
+			
+
 			TAGS[0x829a] = 'ExposureTime';
 			TAGS[0x829d] = 'FNumber';
 			TAGS[0x8822] = 'ExposureProgram';
-			TAGS[0x8827] = 'IsoSpeedRatings';
+			TAGS[0x8827] = 'ISOSpeedRatings';
 			TAGS[0x9000] = 'ExifVersion';
 			TAGS[0x9003] = 'DateTimeOriginal';
 			TAGS[0x9004] = 'DateTimeDigitized';

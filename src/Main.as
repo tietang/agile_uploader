@@ -70,7 +70,9 @@ package {
 	// Magic sauce
 	import com.shift8creative.AgileImage;
 	import com.shift8creative.events.AgileImageResizeCompleteEvent;
-	
+	import com.patrickshyu.ExifReader;
+
+
 	
 	public class Main extends Sprite {
 		
@@ -106,7 +108,7 @@ package {
 		public var file_filter_description	: String = 'Image'; // optional description that a user sees when attaching a file. Not necessary to change at all, but may be visually helpful if the file types are changed.
 		public var resize					: String = 'jpg,gif,png,jpeg'; // This should be a no brainer and probably left along, but maybe someone doesn't want to resize images by some off chance..or maybe only certain types of images. Comma separate a list of extensions to be resized. Note: NO SPACES.
 		public var max_post_size			: Number = 1572864; // Size limit for all attachments in bytes, optional. Deafult: 1.5mb
-		
+		public var exif_enable				: Boolean = false;
 		private var _encodePercentComplete  : Number;
 		private var _multiFileRef			: FileReferenceList;
 		private var _fileRef				: FileReference;
@@ -116,7 +118,7 @@ package {
 		public var file						: AgileImage;
 		public var currentPostSize			: Number = 0; // in bytes
 		public var fileCount				: Number = 0;
-		
+		public var m_exif					:Object = new Object;
 		public function Main ( ) {			
 			stage.align = StageAlign.TOP_LEFT;
 			stage.scaleMode = StageScaleMode.NO_SCALE;
@@ -128,12 +130,12 @@ package {
 			var agile_uploader_menu:ContextMenu = new ContextMenu();	
 			contextMenu = agile_uploader_menu;	
 			agile_uploader_menu.hideBuiltInItems();
-			var title_notice:ContextMenuItem = new ContextMenuItem("Agile Uploader v3.0"); // EXTREMELY important to update this version number						
+			var title_notice:ContextMenuItem = new ContextMenuItem("Agile Uploader v3.1"); // EXTREMELY important to update this version number						
 			var copyright_notice:ContextMenuItem = new ContextMenuItem("Copyright © 2011, Shift8");
 			copyright_notice.enabled = false;
 			agile_uploader_menu.customItems.push(title_notice, copyright_notice);
 			title_notice.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:ContextMenuEvent):void {
-				var url:String = 'http://www.shift8creative.com/projects/agile-uploader/index.html';
+				var url:String = 'https://github.com/wtt2012/agile_uploader';
 				var window:String = '_blank';
 				var req:URLRequest = url is String ? new URLRequest(url) : url;
 				if (!ExternalInterface.available) {
@@ -178,8 +180,7 @@ package {
 			if (paramObj.file_filter) { this.file_filter = paramObj.file_filter; }
 			if (paramObj.file_filter_description) { this.file_filter_description = paramObj.file_filter_description; }
 			if (paramObj.resize) { this.resize = paramObj.resize; }
-			if (paramObj.max_post_size) { this.max_post_size = Number(paramObj.max_post_size); }
-			
+			if (paramObj.exif_enable) { this.exif_enable = this._convertToBoolean(paramObj.exif_enable); }
 			// Making people specify in bytes now because that's what Flash uses. Keep consistent
 			// this.max_post_size = int((this.max_post_size / 1024) * 100 / 100); // <-- TO kb
 			// Convert from Kb
@@ -338,9 +339,33 @@ package {
 		private function _onDataLoaded(evt:Event):void {
 			//_fileRef.removeEventListener(Event.COMPLETE, _onDataLoaded); // We don't need this anymore (right now)
 			this.browseBtn.addEventListener(MouseEvent.CLICK, _handleMouseEvent); // Let another file be attached
-			
-			var file:AgileImage = new AgileImage(FileReference(evt.target));
+			var fileRef:FileReference = FileReference(evt.target);
+			var file:AgileImage = new AgileImage(fileRef);
 			//file.addEventListener(AgileImageResizeCompleteEvent.RESIZE_COMPLETE, _resizeComplete); // here? or only if theres a resize? (below)
+			
+			//ExternalInterface.call('console.info', 'exif before required.'); 
+			if (this.js_event_handler != null && exif_enable) {
+				ExternalInterface.call('console.info', 'exif reading...');
+				try{
+					var reader:ExifReader = new ExifReader();
+					//ExternalInterface.call('console.info', 'exif reading 1.');
+					reader.localLoad(fileRef.data, true);
+					//ExternalInterface.call('console.info', 'exif reading 2.');
+					var exif:Object = reader.getAllValues();
+					var json:String = "";
+					if(exif){
+						json = JSON.stringify(exif);
+					}
+					//ExternalInterface.call('console.info', json);
+					ExternalInterface.call(this.js_event_handler, { type: 'exif_locaded', data: json } );
+					//ExternalInterface.call('console.info', 'exif finshed.');
+				}
+				catch (e:Error) {
+					ExternalInterface.call('console.info', e);
+				}
+			}	
+			
+			
 			
 			if (this.firebug === true) { 
 				ExternalInterface.call('console.info', 'File data loaded for:' + file.fileName); 
@@ -379,6 +404,7 @@ package {
 				}
 				
 			}
+ 
 			
 			// Now the file is either attached in its final state, or it's going to be resized.
 				if (_resize === true) {
