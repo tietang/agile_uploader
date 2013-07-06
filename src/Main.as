@@ -43,6 +43,7 @@ package {
 	import flash.events.MouseEvent;
 	import flash.events.*;
 	import flash.ui.ContextMenuItem;
+	import fox.photo.jpeg.Exif;
 	import uint;
 	
 	// for external control via javascript
@@ -71,6 +72,8 @@ package {
 	import com.shift8creative.AgileImage;
 	import com.shift8creative.events.AgileImageResizeCompleteEvent;
 	import com.patrickshyu.ExifReader;
+	import fox.photo.ExifExtractor;
+	import jp.shichiseki.exif.ExifInfo;
 
 
 	
@@ -313,7 +316,7 @@ package {
 				_fileRef.addEventListener(Event.COMPLETE, _onDataLoaded);				
 			}	
 		}
-		
+ 
 		private function _resizeComplete(evt:Event):void {
 			this.currentPostSize += evt.resizedInfo.finalSize;
 			//ExternalInterface.call('console.info', 'Current POST Size (after last attempted file attach): ' + this.currentPostSize);
@@ -334,20 +337,11 @@ package {
 			
 			//ExternalInterface.call('console.dir', this.filesArray);
 		}
-		
-		// AFTER FILE DATA HAS LOADED -
-		private function _onDataLoaded(evt:Event):void {
-			//_fileRef.removeEventListener(Event.COMPLETE, _onDataLoaded); // We don't need this anymore (right now)
-			this.browseBtn.addEventListener(MouseEvent.CLICK, _handleMouseEvent); // Let another file be attached
-			var fileRef:FileReference = FileReference(evt.target);
-			var file:AgileImage = new AgileImage(fileRef);
-			//file.addEventListener(AgileImageResizeCompleteEvent.RESIZE_COMPLETE, _resizeComplete); // here? or only if theres a resize? (below)
-			
-			//ExternalInterface.call('console.info', 'exif before required.'); 
+		private function readExif(fileRef:FileReference):void {
 			if (this.js_event_handler != null && exif_enable) {
 				ExternalInterface.call('console.info', 'exif reading...');
 				try{
-					var reader:ExifReader = new ExifReader();
+					var reader:ExifReader2 = new ExifReader2();
 					//ExternalInterface.call('console.info', 'exif reading 1.');
 					reader.localLoad(fileRef.data, true);
 					//ExternalInterface.call('console.info', 'exif reading 2.');
@@ -364,6 +358,43 @@ package {
 					ExternalInterface.call('console.info', e);
 				}
 			}	
+		}
+		// AFTER FILE DATA HAS LOADED -
+		private function _onDataLoaded(evt:Event):void {
+			//_fileRef.removeEventListener(Event.COMPLETE, _onDataLoaded); // We don't need this anymore (right now)
+			this.browseBtn.addEventListener(MouseEvent.CLICK, _handleMouseEvent); // Let another file be attached
+			var fileRef:FileReference = FileReference(evt.target);
+			var file:AgileImage = new AgileImage(fileRef);
+			//file.addEventListener(AgileImageResizeCompleteEvent.RESIZE_COMPLETE, _resizeComplete); // here? or only if theres a resize? (below)
+			
+			//ExternalInterface.call('console.info', 'exif before required.'); 
+			
+			
+			if (this.js_event_handler != null && exif_enable) {
+				//ExternalInterface.call('console.info', 'exif reading 2...');
+				try {
+					
+					var ee:Exif =  ExifExtractor.readExif(fileRef.data);
+					ee.initUseFul();
+
+					var exif2:Object = ee.getAllValues();
+					//ExternalInterface.call('console.info', exif2);
+					var json2:String = "";
+					if(exif2){
+						json2 = JSON.stringify(exif2);
+					}
+					//ExternalInterface.call('console.info', json2);
+					ExternalInterface.call(this.js_event_handler, { type: 'exif_locaded', data: json2 } );
+					//ExternalInterface.call('console.info', 'exif finshed.');
+					
+				}
+				catch (e:Error) {
+					ExternalInterface.call('console.info', e);	
+ 
+				}
+			}				
+			
+			 
 			
 			
 			
@@ -545,6 +576,8 @@ package {
 					*/
 				
 					ml.addEventListener(Event.COMPLETE, handleSubmitComplete);
+					ml.addEventListener(ProgressEvent.PROGRESS, handleSubmitProgress);
+					
 					ml.addEventListener(HTTPStatusEvent.HTTP_STATUS, httpStatusHandler);			
 					if(this.return_submit_response === true) {
 						ml.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA, _handleServerResponse);
@@ -698,7 +731,22 @@ package {
 			// Call the js callback function (if return_submit_response is true then we'll call this below along with the server response, no need to call it twice)
 			if (this.js_event_handler != null) {
 				// IF this was called then the entire server response would be available include the request made... its overkill?
-				//ExternalInterface.call(this.js_event_handler, { type: 'submitted', request: e });
+				ExternalInterface.call(this.js_event_handler, { type: 'submitted', request: e });
+			}
+		}	
+		
+		public function handleSubmitProgress(e:ProgressEvent):void {
+			this.filesArray = new Array(); // Clear this out on submit, it will prevent malicious submitters. If someone can somehow disable JavaScript right before submitting and the submit button is within the swf, they can keep submitting over and over. Or if they can prevent the re-direct or if there is no re-direct...Maybe the intent was to allow multiple submits without going anywhere.
+			if(this.firebug === true) {
+				//ExternalInterface.call('console.dir', e.data);
+  
+				ExternalInterface.call('console.info', 'uploading: ' + e.bytesTotal+","+e.bytesLoaded);
+			}
+			// Call the js callback function (if return_submit_response is true then we'll call this below along with the server response, no need to call it twice)
+			if (this.js_event_handler != null) {
+				// IF this was called then the entire server response would be available include the request made... its overkill?
+ 
+				ExternalInterface.call(this.js_event_handler, { type: 'submit_progressing', request: e });
 			}
 		}
 		

@@ -11,7 +11,7 @@
 //				});
 // reader.load(new URLRequest('myimage.jpg'), true);
  
-package com.patrickshyu
+package 
 {
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
@@ -24,7 +24,7 @@ package com.patrickshyu
 	import flash.net.URLStream;
 	import flash.utils.ByteArray;
  
-	public class ExifReader extends EventDispatcher
+	public class ExifReader2 extends EventDispatcher
 	{		
 		private var m_loadThumbnail:Boolean = false;
 		private var m_urlStream:URLStream = null;
@@ -63,7 +63,7 @@ package com.patrickshyu
 			return m_exif;
 		}
  
-		public function ExifReader(){
+		public function ExifReader2(){
 			DATASIZES[1] = 1;
 			DATASIZES[2] = 1;
 			DATASIZES[3] = 2;
@@ -334,6 +334,7 @@ package com.patrickshyu
 				for(;m_loc<nextIFD;++m_loc) m_data.readUnsignedByte();
 			if(ifd==0 && nextIFD) readIFD(1);
 		}
+		
  
 		private function thumbnailLoaded(e:Event):void{
 			m_thumbnailData.clear();

@@ -447,6 +447,7 @@
 
 		private function onProgress( event: ProgressEvent ): void
 		{
+			
 			dispatchEvent( event );
 		}
 
